@@ -1,4 +1,4 @@
-from dense_correspondence_dataset_masked import DenseCorrespondenceDataset, ImageType
+from dense_correspondence.dataset.dense_correspondence_dataset_masked import DenseCorrespondenceDataset, ImageType
 
 import os
 import numpy as np
@@ -102,10 +102,10 @@ class SpartanDataset(DenseCorrespondenceDataset):
             raise ValueError("mode should be one of [test, train]")
 
         self.init_length()
-        print "Using SpartanDataset:"
-        print "   - in", self.mode, "mode"
-        print "   - number of scenes", self._num_scenes
-        print "   - total images:    ", self.num_images_total
+        print("Using SpartanDataset:")
+        print("   - in", self.mode, "mode")
+        print("   - number of scenes", self._num_scenes)
+        print("   - total images:    ", self.num_images_total)
 
 
     def __getitem__(self, index):
@@ -123,31 +123,31 @@ class SpartanDataset(DenseCorrespondenceDataset):
         # Case 0: Same scene, same object
         if data_load_type == SpartanDatasetDataType.SINGLE_OBJECT_WITHIN_SCENE:
             if self._verbose:
-                print "Same scene, same object"
+                print("Same scene, same object")
             return self.get_single_object_within_scene_data()
 
         # Case 1: Same object, different scene
         if data_load_type == SpartanDatasetDataType.SINGLE_OBJECT_ACROSS_SCENE:
             if self._verbose:
-                print "Same object, different scene"
+                print("Same object, different scene")
             return self.get_single_object_across_scene_data()
 
         # Case 2: Different object
         if data_load_type == SpartanDatasetDataType.DIFFERENT_OBJECT:
             if self._verbose:
-                print "Different object"
+                print("Different object")
             return self.get_different_object_data()
 
         # Case 3: Multi object
         if data_load_type == SpartanDatasetDataType.MULTI_OBJECT:
             if self._verbose:
-                print "Multi object"
+                print("Multi object")
             return self.get_multi_object_within_scene_data()
 
         # Case 4: Synthetic multi object
         if data_load_type == SpartanDatasetDataType.SYNTHETIC_MULTI_OBJECT:
             if self._verbose:
-                print "Synthetic multi object"
+                print("Synthetic multi object")
             return self.get_synthetic_multi_object_within_scene_data()
 
 
@@ -250,7 +250,7 @@ class SpartanDataset(DenseCorrespondenceDataset):
         if mode is None:
             mode = self.mode
 
-        for object_id, single_object_scene_dict in self._single_object_scene_dict.iteritems():
+        for object_id, single_object_scene_dict in self._single_object_scene_dict.items():
             for scene_name in single_object_scene_dict[mode]:
                 yield scene_name
 
@@ -269,7 +269,7 @@ class SpartanDataset(DenseCorrespondenceDataset):
             scene_list.append(scene_name)
 
         return scene_list
-    
+
     def get_list_of_objects(self):
         """
         Returns a list of object ids
@@ -414,7 +414,7 @@ class SpartanDataset(DenseCorrespondenceDataset):
         :rtype:
         """
         pose_data = self.get_pose_data(scene_name)
-        image_idxs = pose_data.keys() # list of integers
+        image_idxs = list(pose_data.keys()) # list of integers
         random.choice(image_idxs)
         random_idx = random.choice(image_idxs)
         return random_idx
@@ -425,7 +425,7 @@ class SpartanDataset(DenseCorrespondenceDataset):
         :return:
         :rtype:
         """
-        object_id_list = self._single_object_scene_dict.keys()
+        object_id_list = list(self._single_object_scene_dict.keys())
         return random.choice(object_id_list)
 
     def get_random_object_id_and_int(self):
@@ -684,7 +684,7 @@ class SpartanDataset(DenseCorrespondenceDataset):
 
 
         # find non_correspondences
-        image_b_mask_torch = torch.from_numpy(np.asarray(image_b_mask)).type(torch.FloatTensor)
+        image_b_mask_torch = torch.from_numpy(np.array(image_b_mask)).type(torch.FloatTensor)
         image_b_shape = image_b_depth_numpy.shape
         image_width = image_b_shape[1]
         image_height = image_b_shape[0]
@@ -734,7 +734,7 @@ class SpartanDataset(DenseCorrespondenceDataset):
 
         # make blind non matches
         matches_a_mask = SD.mask_image_from_uv_flat_tensor(matches_a, image_width, image_height)
-        image_a_mask_torch = torch.from_numpy(np.asarray(image_a_mask)).long()
+        image_a_mask_torch = torch.from_numpy(np.array(image_a_mask)).long()
         mask_a_flat = image_a_mask_torch.view(-1,1).squeeze(1)
         blind_non_matches_a = (mask_a_flat - matches_a_mask).nonzero()
 
@@ -834,9 +834,26 @@ class SpartanDataset(DenseCorrespondenceDataset):
                 plt.title("Mask of img a object pixels for which there was NO match")
                 plt.show()
 
-
+        # take care of the unprecedent out of range case
+        matches_a, matches_b = self.out_of_range_filter(image_a_rgb, matches_a, matches_b)
+        masked_non_matches_a, masked_non_matches_b = self.out_of_range_filter(image_a_rgb, masked_non_matches_a, masked_non_matches_b)
+        background_non_matches_a, background_non_matches_b = self.out_of_range_filter(image_a_rgb, background_non_matches_a, background_non_matches_b)
+        blind_non_matches_a, blind_non_matches_b = self.out_of_range_filter(image_a_rgb, blind_non_matches_a, blind_non_matches_b)
 
         return metadata["type"], image_a_rgb, image_b_rgb, matches_a, matches_b, masked_non_matches_a, masked_non_matches_b, background_non_matches_a, background_non_matches_b, blind_non_matches_a, blind_non_matches_b, metadata
+
+    def out_of_range_filter(self, image, m_a, m_b):
+        index_limit = image.size()[1] * image.size()[2]
+        m_a = m_a.type(torch.int64)
+        m_b = m_b.type(torch.int64)
+        # find the indices that the both m_a and m_b elements are below the index limit.
+        idx_a = (m_a<index_limit).nonzero()[:,0]
+        idx_b = (m_b<index_limit).nonzero()[:,0]
+        a_cat_b, counts = torch.cat([idx_a, idx_b]).unique(return_counts=True)
+        intersection = a_cat_b[torch.where(counts.gt(1))]
+        m_a = torch.index_select(m_a, 0, intersection)
+        m_b = torch.index_select(m_b, 0, intersection)
+        return m_a, m_b
 
     def create_non_matches(self, uv_a, uv_b_non_matches, multiplier):
         """
@@ -955,7 +972,7 @@ class SpartanDataset(DenseCorrespondenceDataset):
         matches_2 = (matches_2[0].float(), matches_2[1].float())
 
         # find non_correspondences
-        merged_mask_2_torch = torch.from_numpy(merged_mask_2).type(torch.FloatTensor)
+        merged_mask_2_torch = torch.from_numpy(np.array(merged_mask_2)).type(torch.FloatTensor)
         image_b_shape = merged_mask_2_torch.shape
         image_width = image_b_shape[1]
         image_height = image_b_shape[0]
@@ -1004,7 +1021,7 @@ class SpartanDataset(DenseCorrespondenceDataset):
             import dense_correspondence.correspondence_tools.correspondence_plotter as correspondence_plotter
             num_matches_to_plot = 10
 
-            print "PRE-MERGING"
+            print("PRE-MERGING")
             plot_uv_a1, plot_uv_a2 = SpartanDataset.subsample_tuple_pair(uv_a1, uv_a2, num_samples=num_matches_to_plot)
 
             # correspondence_plotter.plot_correspondences_direct(image_a1_rgb, np.asarray(image_a1_depth),
@@ -1019,7 +1036,7 @@ class SpartanDataset(DenseCorrespondenceDataset):
             #                                                        plot_uv_b1, plot_uv_b2,
             #                                                        circ_color='g', show=True)
 
-            print "MERGED"
+            print("MERGED")
             plot_uv_1, plot_uv_2 = SpartanDataset.subsample_tuple_pair(matches_1, matches_2, num_samples=num_matches_to_plot)
             plot_uv_a_masked_long, plot_uv_b_masked_non_matches_long =\
                 SpartanDataset.subsample_tuple_pair(uv_a_masked_long, uv_b_masked_non_matches_long, num_samples=num_matches_to_plot)
@@ -1212,7 +1229,7 @@ class SpartanDataset(DenseCorrespondenceDataset):
     @property
     def config(self):
         return self._config
-    
+
     @staticmethod
     def merge_single_object_configs(config_list):
         """

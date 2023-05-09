@@ -192,7 +192,7 @@ class DenseCorrespondenceEvaluation(object):
         pose_a = dataset.get_pose_from_scene_name_and_idx(scene_name, img_a_idx)
         pos_a = pose_a[0:3, 3]
 
-        for i in xrange(0, max_num_attempts):
+        for i in range(0, max_num_attempts):
             img_b_idx = dataset.get_random_image_index(scene_name)
             pose_b = dataset.get_pose_from_scene_name_and_idx(scene_name, img_b_idx)
             pos_b = pose_b[0:3, 3]
@@ -268,10 +268,10 @@ class DenseCorrespondenceEvaluation(object):
 
             if not os.path.isdir(dataset.get_full_path_for_scene(scene_name_a))\
             or not os.path.isdir(dataset.get_full_path_for_scene(scene_name_b)):
-                print("at least one of these scene names does not exist:", scene_name_a, scene_name_b)
+                print(("at least one of these scene names does not exist:", scene_name_a, scene_name_b))
                 continue
 
-            
+
             image_a_idx = annotated_pair["image_a"]["image_idx"]
             image_b_idx = annotated_pair["image_b"]["image_idx"]
 
@@ -310,7 +310,7 @@ class DenseCorrespondenceEvaluation(object):
         utils.reset_random_seed()
 
         pd_dataframe_list = []
-        for i in xrange(num_image_pairs):
+        for i in range(num_image_pairs):
 
             object_id_a, object_id_b = dataset.get_two_different_object_ids()
             scene_name_a = dataset.get_random_single_object_scene_name(object_id_a)
@@ -357,13 +357,13 @@ class DenseCorrespondenceEvaluation(object):
 
         cross_instance_keypoint_labels = utils.getDictFromYamlFilename(full_path_cross_instance_labels)
 
-        print cross_instance_keypoint_labels
+        print(cross_instance_keypoint_labels)
 
         # keypoints = dict()
         # for label in cross_instance_keypoint_labels:
         #     for keypoint_label in label['image']['pixels']:
         #         if keypoint_label['keypoint'] not in keypoints:
-        #             print "Found new keypoint:", keypoint_label['keypoint']
+        #             print("Found new keypoint:", keypoint_label['keypoint'])
 
 
         pd_dataframe_list = []
@@ -371,7 +371,7 @@ class DenseCorrespondenceEvaluation(object):
         # generate all pairs of images
         import itertools
         for subset in itertools.combinations(cross_instance_keypoint_labels, 2):
-            print(subset)
+            print((subset))
 
             scene_name_a = subset[0]["image"]["scene_name"]
             scene_name_b = subset[1]["image"]["scene_name"]
@@ -421,12 +421,12 @@ class DenseCorrespondenceEvaluation(object):
 
         cross_instance_keypoint_labels = utils.getDictFromYamlFilename(full_path_cross_instance_labels)
 
-        print "num cross instance labels", len(cross_instance_keypoint_labels)
+        print("num cross instance labels", len(cross_instance_keypoint_labels))
 
         # Two-layer dict with:
         # - key:   the scene_name
         # - key:   the image_idx
-        # - value: the descriptor image 
+        # - value: the descriptor image
         descriptor_images = dict()
 
         # generate all descriptor images
@@ -440,7 +440,7 @@ class DenseCorrespondenceEvaluation(object):
             rgb, _, _, _ = dataset.get_rgbd_mask_pose(scene_name, image_idx)
             rgb_tensor = dataset.rgb_image_to_tensor(rgb)
             res = dcn.forward_single_image_tensor(rgb_tensor).data.cpu().numpy()
-            
+
             descriptor_images[scene_name][image_idx] = res
 
 
@@ -452,7 +452,7 @@ class DenseCorrespondenceEvaluation(object):
             counter += 1
             keypoint_data_a = subset[0]
             keypoint_data_b = subset[1]
-            
+
             res_a = descriptor_images[keypoint_data_a["scene_name"]][keypoint_data_a["image_idx"]]
             res_b = descriptor_images[keypoint_data_b["scene_name"]][keypoint_data_b["image_idx"]]
 
@@ -460,13 +460,13 @@ class DenseCorrespondenceEvaluation(object):
                 DenseCorrespondenceEvaluation.single_image_pair_cross_scene_keypoints_quantitative_analysis(dcn, dataset, keypoint_data_a, keypoint_data_b, res_a, res_b)
 
             if dataframe_list_temp is None:
-                print "no matches found, skipping"
+                print("no matches found, skipping")
                 continue
 
             pd_dataframe_list += dataframe_list_temp
 
 
-        print "num_pairs considered", counter
+        print("num_pairs considered", counter)
         df = pd.concat(pd_dataframe_list)
 
         return df
@@ -489,15 +489,15 @@ class DenseCorrespondenceEvaluation(object):
 
 
         pd_dataframe_list = []
-        for i in xrange(0, num_image_pairs):
+        for i in range(0, num_image_pairs):
 
 
             scene_name = dataset.get_random_scene_name()
 
             # grab random scene
             if i % logging_rate == 0:
-                print "computing statistics for image %d of %d, scene_name %s" %(i, num_image_pairs, scene_name)
-                print "scene"
+                print("computing statistics for image %d of %d, scene_name %s" %(i, num_image_pairs, scene_name))
+                print("scene")
 
 
             idx_pair = DCE.get_image_pair_with_poses_diff_above_threshold(dataset, scene_name)
@@ -516,7 +516,7 @@ class DenseCorrespondenceEvaluation(object):
                                                             debug=False)
 
             if dataframe_list_temp is None:
-                print "no matches found, skipping"
+                print("no matches found, skipping")
                 continue
 
             pd_dataframe_list += dataframe_list_temp
@@ -602,8 +602,8 @@ class DenseCorrespondenceEvaluation(object):
 
     @staticmethod
     def clip_pixel_to_image_size_and_round(uv, image_width, image_height):
-        u = min(int(round(uv[0])), image_width - 1)
-        v = min(int(round(uv[1])), image_height - 1)
+        u = min(int(torch.round(uv[0])), image_width - 1)
+        v = min(int(torch.round(uv[1])), image_height - 1)
         return (u,v)
 
     @staticmethod
@@ -653,16 +653,16 @@ class DenseCorrespondenceEvaluation(object):
         camera_intrinsics_a = dataset.get_camera_intrinsics(scene_name_a)
         camera_intrinsics_b = dataset.get_camera_intrinsics(scene_name_b)
         if not np.allclose(camera_intrinsics_a.K, camera_intrinsics_b.K):
-            print "Currently cannot handle two different camera K matrices in different scenes!"
-            print "But you could add this..."
+            print("Currently cannot handle two different camera K matrices in different scenes!")
+            print("But you could add this...")
         camera_intrinsics_matrix = camera_intrinsics_a.K
 
         assert len(img_a_pixels) == len(img_b_pixels)
 
-        print "Expanding amount of matches between:"
-        print "scene_name_a", scene_name_a
-        print "scene_name_b", scene_name_b
-        print "originally had", len(img_a_pixels), "matches"
+        print("Expanding amount of matches between:")
+        print("scene_name_a", scene_name_a)
+        print("scene_name_b", scene_name_b)
+        print("originally had", len(img_a_pixels), "matches")
 
         image_height, image_width = dcn.image_shape
         DCE = DenseCorrespondenceEvaluation
@@ -672,13 +672,15 @@ class DenseCorrespondenceEvaluation(object):
         # Loop over the labeled pixel matches once, before using different views
         # This lets us keep depth_a, depth_b, res_a, res_b without reloading
         for i in range(len(img_a_pixels)):
-            print "now, index of pixel match:", i
+            print("now, index of pixel match:", i)
             uv_a = (img_a_pixels[i]["u"], img_a_pixels[i]["v"])
             uv_b = (img_b_pixels[i]["u"], img_b_pixels[i]["v"])
+            uv_a = list(torch.tensor(i) for i in uv_a)
+            uv_b = list(torch.tensor(i) for i in uv_b)
             uv_a = DCE.clip_pixel_to_image_size_and_round(uv_a, image_width, image_height)
             uv_b = DCE.clip_pixel_to_image_size_and_round(uv_b, image_width, image_height)
-            print uv_a
-            print uv_b
+            print(uv_a)
+            print(uv_b)
 
             # Reminder: this function wants only a single uv_a, uv_b
             pd_template = DenseCorrespondenceEvaluation.compute_descriptor_match_statistics(depth_a,
@@ -706,6 +708,8 @@ class DenseCorrespondenceEvaluation(object):
         for i in range(len(img_a_pixels)):
             uv_a = (img_a_pixels[i]["u"], img_a_pixels[i]["v"])
             uv_b = (img_b_pixels[i]["u"], img_b_pixels[i]["v"])
+            uv_a = list(torch.tensor(i) for i in uv_a)
+            uv_b = list(torch.tensor(i) for i in uv_b)
             uv_a = DCE.clip_pixel_to_image_size_and_round(uv_a, image_width, image_height)
             uv_b = DCE.clip_pixel_to_image_size_and_round(uv_b, image_width, image_height)
 
@@ -732,6 +736,7 @@ class DenseCorrespondenceEvaluation(object):
 
 
                 diff_uv_a = (diff_uv_a_vec[0][0], diff_uv_a_vec[1][0])
+                diff_uv_a = list(torch.tensor(i) for i in diff_uv_a)
                 diff_uv_a = DCE.clip_pixel_to_image_size_and_round(diff_uv_a, image_width, image_height)
 
                 pd_template = DenseCorrespondenceEvaluation.compute_descriptor_match_statistics(diff_depth_a,
@@ -766,6 +771,7 @@ class DenseCorrespondenceEvaluation(object):
                 diff_res_b = dcn.forward_single_image_tensor(diff_rgb_b_tensor).data.cpu().numpy()
 
                 diff_uv_b = (diff_uv_b_vec[0][0], diff_uv_b_vec[1][0])
+                diff_uv_b = list(torch.tensor(i) for i in diff_uv_b)
                 diff_uv_b = DCE.clip_pixel_to_image_size_and_round(diff_uv_b, image_width, image_height)
 
                 pd_template = DenseCorrespondenceEvaluation.compute_descriptor_match_statistics(depth_a,
@@ -839,6 +845,9 @@ class DenseCorrespondenceEvaluation(object):
 
             uv_a = [sampled_idx_list[1][i], sampled_idx_list[0][i]]
 
+            print("uv_a, res_a, res_b size: ", uv_a.size(), res_a.size(), res_b.size())
+            print("type: ", uv_a.dtype, res_a.dtype, res_b.dtype)
+
             pd_template = DCE.compute_descriptor_match_statistics_no_ground_truth(uv_a, res_a,
                                                                   res_b,
                                                                   rgb_a=rgb_a,
@@ -909,7 +918,7 @@ class DenseCorrespondenceEvaluation(object):
                                                                device='CPU', img_a_mask=mask_a)
 
         if uv_a_vec is None:
-            print "no matches found, returning"
+            print("no matches found, returning")
             return None
 
         # container to hold a list of pandas dataframe
@@ -930,9 +939,11 @@ class DenseCorrespondenceEvaluation(object):
         DCE = DenseCorrespondenceEvaluation
 
         for i in match_list:
-            uv_a = (uv_a_vec[0][i], uv_a_vec[1][i])
+            uv_a_raw = (uv_a_vec[0][i], uv_a_vec[1][i])
+            uv_a = DCE.clip_pixel_to_image_size_and_round(uv_a_raw, image_width, image_height)
             uv_b_raw = (uv_b_vec[0][i], uv_b_vec[1][i])
             uv_b = DCE.clip_pixel_to_image_size_and_round(uv_b_raw, image_width, image_height)
+
 
             pd_template = DCE.compute_descriptor_match_statistics(depth_a,
                                                                   depth_b,
@@ -1395,11 +1406,11 @@ class DenseCorrespondenceEvaluation(object):
         try:
             descriptor_image_stats = dcn.descriptor_image_stats
         except:
-            print "Could not find descriptor image stats..."
-            print "Only normalizing pairs of images!"
+            print("Could not find descriptor image stats...")
+            print("Only normalizing pairs of images!")
             descriptor_image_stats = None
 
-        for i in xrange(0, num_matches):
+        for i in range(0, num_matches):
             # convert to (u,v) format
             pixel_a = [sampled_idx_list[1][i], sampled_idx_list[0][i]]
             best_match_uv, best_match_diff, norm_diffs =\
@@ -1490,8 +1501,8 @@ class DenseCorrespondenceEvaluation(object):
         camera_intrinsics_a = dataset.get_camera_intrinsics(scene_name_a)
         camera_intrinsics_b = dataset.get_camera_intrinsics(scene_name_b)
         if not np.allclose(camera_intrinsics_a.K, camera_intrinsics_b.K):
-            print "Currently cannot handle two different camera K matrices in different scenes!"
-            print "But you could add this..."
+            print("Currently cannot handle two different camera K matrices in different scenes!")
+            print("But you could add this...")
         camera_intrinsics_matrix = camera_intrinsics_a.K
 
         image_height, image_width = dcn.image_shape
@@ -1500,7 +1511,7 @@ class DenseCorrespondenceEvaluation(object):
 
         ordering = ["standard", "reverse"]
 
-        for kp_name, data_a in keypoint_data_a['keypoints'].iteritems():
+        for kp_name, data_a in keypoint_data_a['keypoints'].items():
             if kp_name not in keypoint_data_b['keypoints']:
                 raise ValueError("keypoint %s appears in one list of annotated data but"
                                  "not the other" %(kp_name))
@@ -1724,16 +1735,18 @@ class DenseCorrespondenceEvaluation(object):
         image_height, image_width = depth_a.shape[0], depth_a.shape[1]
 
         def clip_pixel_to_image_size_and_round(uv):
+            if isinstance(uv[0], torch.Tensor): uv[0] = uv[0].cpu().numpy()
+            if isinstance(uv[1], torch.Tensor): uv[1] = uv[0].cpu().numpy()
             u = min(int(round(uv[0])), image_width - 1)
             v = min(int(round(uv[1])), image_height - 1)
             return [u,v]
 
         uv_a = clip_pixel_to_image_size_and_round((kp_a.pt[0], kp_a.pt[1]))
         uv_a_depth = depth_a[uv_a[1], uv_a[0]] / DEPTH_IM_SCALE
-        # print "uv_a", uv_a
-        # print "uv_a_depth", uv_a_depth
-        # print "camera_matrix", camera_matrix
-        # print "pose_a", pose_a
+        # print("uv_a", uv_a)
+        # print("uv_a_depth", uv_a_depth)
+        # print("camera_matrix", camera_matrix)
+        # print("pose_a", pose_a)
         kp_a_3d = DCE.compute_3d_position(uv_a, uv_a_depth, camera_matrix, pose_a)
 
 
@@ -1748,11 +1761,11 @@ class DenseCorrespondenceEvaluation(object):
         is_valid = uv_b_depth_valid
 
         if debug:
-            print "\n\n"
-            print "uv_a", uv_a
-            print "kp_a_3d", kp_a_3d
-            print "kp_b_3d", kp_b_3d
-            print "is_valid", is_valid
+            print("\n\n")
+            print("uv_a", uv_a)
+            print("kp_a_3d", kp_a_3d)
+            print("kp_b_3d", kp_b_3d)
+            print("is_valid", is_valid)
 
 
 
@@ -1800,9 +1813,9 @@ class DenseCorrespondenceEvaluation(object):
         for idx, val in enumerate(matches):
             m, n = val
             if (m.distance < 0.5 * n.distance) and m.distance < 0.01:
-                print "\n\n"
-                print "m.distance", m.distance
-                print "n.distance", n.distance
+                print("\n\n")
+                print("m.distance", m.distance)
+                print("n.distance", n.distance)
                 good.append([m])
 
 
@@ -1811,9 +1824,9 @@ class DenseCorrespondenceEvaluation(object):
             #     return
 
 
-        print "total keypoints = ", len(kp1)
-        print "num good matches = ", len(good)
-        print "SIFT good matches = ", len(sift_data['good'])
+        print("total keypoints = ", len(kp1))
+        print("num good matches = ", len(good))
+        print("SIFT good matches = ", len(sift_data['good']))
         if visualize:
             img1 = cv2.cvtColor(rgb_a, cv2.COLOR_BGR2GRAY)
             img2 = cv2.cvtColor(rgb_b, cv2.COLOR_BGR2GRAY)
@@ -1852,16 +1865,16 @@ class DenseCorrespondenceEvaluation(object):
         # Note: (manuelli) why is this treated differently than the single object
         # case?
         evaluation_labeled_data_paths += dataset.config["multi_object"]["evaluation_labeled_data_path"]
-        
+
         # add all of the single object lists
-        for object_key, val in dataset.config["single_object"].iteritems():
+        for object_key, val in dataset.config["single_object"].items():
             if "evaluation_labeled_data_path" in val:
                 evaluation_labeled_data_paths += val["evaluation_labeled_data_path"]
 
         if len(evaluation_labeled_data_paths) == 0:
-            print "Could not find labeled cross scene data for this dataset."
-            print "It needs to be set in the dataset.yaml of the folder from which"
-            print "this network is loaded from."
+            print("Could not find labeled cross scene data for this dataset.")
+            print("It needs to be set in the dataset.yaml of the folder from which")
+            print("this network is loaded from.")
             return
 
         cross_scene_data = []
@@ -1883,7 +1896,7 @@ class DenseCorrespondenceEvaluation(object):
         dcn.eval()
 
         cross_scene_data = DenseCorrespondenceEvaluation.parse_cross_scene_data(dataset)
-        
+
         for annotated_pair in cross_scene_data:
 
             scene_name_a = annotated_pair["image_a"]["scene_name"]
@@ -1894,7 +1907,7 @@ class DenseCorrespondenceEvaluation(object):
             or not os.path.isdir(dataset.get_full_path_for_scene(scene_name_b)):
                 print("at least one of these scene names does not exist:", scene_name_a, scene_name_b)
                 continue
-            print("these scene names exist:", scene_name_a, scene_name_b)    
+            print("these scene names exist:", scene_name_a, scene_name_b)
             image_a_idx = annotated_pair["image_a"]["image_idx"]
             image_b_idx = annotated_pair["image_b"]["image_idx"]
 
@@ -1921,7 +1934,7 @@ class DenseCorrespondenceEvaluation(object):
                 plt.show()
 
 
-    @staticmethod 
+    @staticmethod
     def get_random_image_pairs(dataset):
         """
         Given a dataset, chose a random scene, and a handful of image pairs from
@@ -1981,7 +1994,7 @@ class DenseCorrespondenceEvaluation(object):
 
         dcn.eval()
         # Train Data
-        print "\n\n-----------Train Data Evaluation----------------"
+        print("\n\n-----------Train Data Evaluation----------------")
         if randomize:
             scene_names, img_pairs = DenseCorrespondenceEvaluation.get_random_scenes_and_image_pairs(dataset)
         else:
@@ -2005,7 +2018,7 @@ class DenseCorrespondenceEvaluation(object):
             scene_names = [scene_name]*len(img_pairs)
 
         for scene_name, img_pair in zip(scene_names, img_pairs):
-            print "Image pair (%d, %d)" %(img_pair[0], img_pair[1])
+            print("Image pair (%d, %d)" %(img_pair[0], img_pair[1]))
             DenseCorrespondenceEvaluation.single_same_scene_image_pair_qualitative_analysis(dcn,
                                                                                  dataset,
                                                                                  scene_name,
@@ -2013,7 +2026,7 @@ class DenseCorrespondenceEvaluation(object):
                                                                                  img_pair[1])
 
         # Test Data
-        print "\n\n-----------Test Data Evaluation----------------"
+        print("\n\n-----------Test Data Evaluation----------------")
         dataset.set_test_mode()
         if randomize:
             scene_names, img_pairs = DenseCorrespondenceEvaluation.get_random_scenes_and_image_pairs(dataset)
@@ -2039,7 +2052,7 @@ class DenseCorrespondenceEvaluation(object):
 
 
         for scene_name, img_pair in zip(scene_names, img_pairs):
-            print "Image pair (%d, %d)" %(img_pair[0], img_pair[1])
+            print("Image pair (%d, %d)" %(img_pair[0], img_pair[1]))
             DenseCorrespondenceEvaluation.single_same_scene_image_pair_qualitative_analysis(dcn,
                                                                                  dataset,
                                                                                  scene_name,
@@ -2048,7 +2061,7 @@ class DenseCorrespondenceEvaluation(object):
 
         if scene_type == "caterpillar":
             # Train Data
-            print "\n\n-----------More Test Data Evaluation----------------"
+            print("\n\n-----------More Test Data Evaluation----------------")
             if randomize:
                 scene_name, img_pairs = DenseCorrespondenceEvaluation.get_random_image_pairs(dataset)
             else:
@@ -2061,7 +2074,7 @@ class DenseCorrespondenceEvaluation(object):
                 img_pairs.append([841, 771])
 
             for img_pair in img_pairs:
-                print "Image pair (%d, %d)" %(img_pair[0], img_pair[1])
+                print("Image pair (%d, %d)" %(img_pair[0], img_pair[1]))
                 DenseCorrespondenceEvaluation.single_same_scene_image_pair_qualitative_analysis(dcn,
                                                                                  dataset,
                                                                                  scene_name,
@@ -2102,7 +2115,7 @@ class DenseCorrespondenceEvaluation(object):
             data_type = data_type[0]
 
             if len(matches_a[0]) == 0:
-                print "didn't have any matches, continuing"
+                print("didn't have any matches, continuing")
                 continue
 
             img_a = Variable(img_a.cuda(), requires_grad=False)
@@ -2194,19 +2207,19 @@ class DenseCorrespondenceEvaluation(object):
             channel_min, _ = res_reshape.min(0) # shape [D]
             channel_max, _ = res_reshape.max(0) # shape [D]
 
-            
+
             mask_flat = mask_tensor.view(-1,1).squeeze(1)
 
             # now do the same for the masked image
             # gracefully handle the case where the mask is all zeros
             mask_indices_flat = torch.nonzero(mask_flat)
             if len(mask_indices_flat) == 0:
-                return None, None     
+                return None, None
 
             mask_indices_flat = mask_indices_flat.squeeze(1)
-            
-                
-            # print "mask_flat.shape", mask_flat.shape
+
+
+            # print("mask_flat.shape", mask_flat.shape)
 
             res_masked_flat = res_reshape.index_select(0, mask_indices_flat) # shape [mask_size, D]
             mask_channel_mean = res_masked_flat.mean(0)
@@ -2267,7 +2280,7 @@ class DenseCorrespondenceEvaluation(object):
         stats['entire_image'] = {'mean': None, 'max': None, 'min': None}
         stats['mask_image'] = {'mean': None, 'max': None, 'min': None}
 
-        for i in xrange(0,num_images):
+        for i in range(0,num_images):
             rgb, depth, mask, _ = dataset.get_random_rgbd_mask_pose()
             img_tensor = dataset.rgb_image_to_tensor(rgb)
             res = dcn.forward_single_image_tensor(img_tensor)  # [H, W, D]
@@ -2286,7 +2299,7 @@ class DenseCorrespondenceEvaluation(object):
             update_stats(stats['mask_image'], mask_image_stats)
 
 
-        for key, val in stats.iteritems():
+        for key, val in stats.items():
             val['mean'] = 1.0/num_images * val['mean']
             for field in val:
                 val[field] = val[field].tolist()
@@ -2308,7 +2321,7 @@ class DenseCorrespondenceEvaluation(object):
     def run_evaluation_on_network(model_folder, num_image_pairs=100,
                                   num_matches_per_image_pair=100,
                                   save_folder_name="analysis",
-                                  compute_descriptor_statistics=True, 
+                                  compute_descriptor_statistics=True,
                                   cross_scene=True,
                                   dataset=None,
                                   iteration=None):
@@ -2391,7 +2404,7 @@ class DenseCorrespondenceEvaluation(object):
             fig_axes = DCEP.run_on_single_dataframe(cross_scene_csv, label="cross_scene", save=False,
                                                     previous_fig_axes=fig_axes)
 
-        fig, _ = fig_axes        
+        fig, _ = fig_axes
         save_fig_file = os.path.join(output_dir, "quant_plots.png")
         fig.savefig(save_fig_file)
 
@@ -2469,15 +2482,15 @@ class DenseCorrespondenceEvaluation(object):
         and makes an object-labeled scatter plot of where these descriptors are.
         """
 
-        print "Checking to make sure this is a 2D or 3D descriptor"
-        print "If you'd like you could add projection methods for higher dimension descriptors"
+        print("Checking to make sure this is a 2D or 3D descriptor")
+        print("If you'd like you could add projection methods for higher dimension descriptors")
         assert ((dcn.descriptor_dimension == 2) or (dcn.descriptor_dimension == 3))
 
         if dcn.descriptor_dimension == 3:
             use_3d = True
             d = 3
-            print "This descriptor_dimension is 3d"
-            print "I'm going to make 3 plots for you: xy, yz, xz"
+            print("This descriptor_dimension is 3d")
+            print("I'm going to make 3 plots for you: xy, yz, xz")
         else:
             use_3d = False
             d = 2
@@ -2585,39 +2598,39 @@ class DenseCorrespondenceEvaluation(object):
 
 
 
-        print "ALL"
+        print("ALL")
         if not use_3d:
-            for key, value in descriptors_known_objects_samples.iteritems():
+            for key, value in descriptors_known_objects_samples.items():
                 plt.scatter(value[:,0], value[:,1], alpha=0.5, label=key)
 
             if plot_background:
                 plt.scatter(descriptors_background_samples[:,0], descriptors_background_samples[:,1], alpha=0.5, label="background")
             plt.legend()
             plt.show()
-        
+
         if use_3d:
-            for key, value in descriptors_known_objects_samples_xy.iteritems():
+            for key, value in descriptors_known_objects_samples_xy.items():
                 plt.scatter(value[:,0], value[:,1], alpha=0.5, label=key)
             if plot_background:
                 plt.scatter(descriptors_background_samples_xy[:,0], descriptors_background_samples_xy[:,1], alpha=0.5, label="background")
             plt.legend()
             plt.show()
 
-            for key, value in descriptors_known_objects_samples_yz.iteritems():
+            for key, value in descriptors_known_objects_samples_yz.items():
                 plt.scatter(value[:,0], value[:,1], alpha=0.5, label=key)
             if plot_background:
                 plt.scatter(descriptors_background_samples_yz[:,0], descriptors_background_samples_yz[:,1], alpha=0.5, label="background")
             plt.legend()
             plt.show()
 
-            for key, value in descriptors_known_objects_samples_xz.iteritems():
+            for key, value in descriptors_known_objects_samples_xz.items():
                 plt.scatter(value[:,0], value[:,1], alpha=0.5, label=key)
             if plot_background:
                 plt.scatter(descriptors_background_samples_xz[:,0], descriptors_background_samples_xz[:,1], alpha=0.5, label="background")
             plt.legend()
             plt.show()
 
-        print "done"
+        print("done")
 
     @staticmethod
     def make_default():
@@ -2677,7 +2690,7 @@ class DenseCorrespondenceEvaluationPlotter(object):
     def make_pixel_match_error_plot(ax, df, label=None, num_bins=100, masked=False):
         """
         :param ax: axis of a matplotlib plot to plot on
-        :param df: pandas dataframe, i.e. generated from quantitative 
+        :param df: pandas dataframe, i.e. generated from quantitative
         :param num_bins:
         :type num_bins:
         :return:
@@ -2685,11 +2698,11 @@ class DenseCorrespondenceEvaluationPlotter(object):
         """
         DCEP = DenseCorrespondenceEvaluationPlotter
 
-        
+
         if masked:
             data_string = 'pixel_match_error_l2_masked'
         else:
-            data_string = 'pixel_match_error_l2' 
+            data_string = 'pixel_match_error_l2'
 
         data = df[data_string]
 
@@ -2710,7 +2723,7 @@ class DenseCorrespondenceEvaluationPlotter(object):
     def make_across_object_best_match_plot(ax, df, label=None, num_bins=100):
         """
         :param ax: axis of a matplotlib plot to plot on
-        :param df: pandas dataframe, i.e. generated from quantitative 
+        :param df: pandas dataframe, i.e. generated from quantitative
         :param num_bins:
         :type num_bins:
         :return:
@@ -2743,7 +2756,7 @@ class DenseCorrespondenceEvaluationPlotter(object):
         if masked:
             data_string = 'norm_diff_pred_3d_masked'
         else:
-            data_string = 'norm_diff_pred_3d' 
+            data_string = 'norm_diff_pred_3d'
 
 
         data = df[data_string]
@@ -2773,7 +2786,7 @@ class DenseCorrespondenceEvaluationPlotter(object):
         DCEP = DenseCorrespondenceEvaluationPlotter
 
         data = df['norm_diff_descriptor_ground_truth']
-        
+
         plot = DCEP.make_cdf_plot(ax, data, num_bins=num_bins, label=label)
         ax.set_xlabel('Descriptor match error, L2')
         ax.set_ylabel('Fraction of images')
@@ -2795,16 +2808,16 @@ class DenseCorrespondenceEvaluationPlotter(object):
         if masked:
             data_string = 'fraction_pixels_closer_than_ground_truth_masked'
         else:
-            data_string = 'fraction_pixels_closer_than_ground_truth' 
+            data_string = 'fraction_pixels_closer_than_ground_truth'
 
         data = df[data_string]
-        
+
         plot = DCEP.make_cdf_plot(ax, data, num_bins=num_bins, label=label)
-        
+
         if masked:
             ax.set_xlabel('Fraction false positives (masked)')
         else:
-            ax.set_xlabel('Fraction false positives')    
+            ax.set_xlabel('Fraction false positives')
 
         ax.set_ylabel('Fraction of images')
         ax.set_xlim([0, 1])
@@ -2830,7 +2843,7 @@ class DenseCorrespondenceEvaluationPlotter(object):
             data_string = 'average_l2_distance_for_false_positives'
 
         data = df[data_string]
-        
+
         plot = DCEP.make_cdf_plot(ax, data, num_bins=num_bins, label=label)
         if masked:
             ax.set_xlabel('Average l2 pixel distance for false positives (masked)')
@@ -2870,7 +2883,7 @@ class DenseCorrespondenceEvaluationPlotter(object):
         Usage notes:
         - after calling this function, you can still change many things about the plot
         - for example you can still call plt.title("New title") to change the title
-        - if you'd like to plot multiple lines on the same axes, then take the return arg of a previous call to this function, 
+        - if you'd like to plot multiple lines on the same axes, then take the return arg of a previous call to this function,
         - and pass it into previous_plot, i.e.:
             fig = run_on_single_dataframe("thing1.csv")
             run_on_single_dataframe("thing2.csv", previous_plot=fig)
@@ -2891,7 +2904,7 @@ class DenseCorrespondenceEvaluationPlotter(object):
         :param save: whether or not you want to save a .png
         :type save: bool
         :param previous_plot: a previous matplotlib figure to keep building on
-        :type previous_plot: None or matplotlib figure 
+        :type previous_plot: None or matplotlib figure
         """
         DCEP = DenseCorrespondenceEvaluationPlotter
 
@@ -2924,8 +2937,8 @@ class DenseCorrespondenceEvaluationPlotter(object):
                 fig, axes = plt.subplots(N, figsize=(10,N*5))
         else:
             [fig, axes] = previous_fig_axes
-        
-        
+
+
         def get_ax(axes, index):
             if use_masked_plots:
                 return axes[index,0]
@@ -2938,12 +2951,12 @@ class DenseCorrespondenceEvaluationPlotter(object):
         if use_masked_plots:
             plot = DCEP.make_pixel_match_error_plot(axes[0,1], df, label=label, masked=True)
         ax.legend()
-       
+
         # 3D match error
         ax = get_ax(axes, 1)
         plot = DCEP.make_descriptor_accuracy_plot(ax, df, label=label)
         if use_masked_plots:
-            plot = DCEP.make_descriptor_accuracy_plot(axes[1,1], df, label=label, masked=True)            
+            plot = DCEP.make_descriptor_accuracy_plot(axes[1,1], df, label=label, masked=True)
 
 
         # if save:
@@ -2982,7 +2995,7 @@ class DenseCorrespondenceEvaluationPlotter(object):
 
         See run_on_single_dataframe() for documentation.
 
-        The only difference is that for this one, we only have across object data. 
+        The only difference is that for this one, we only have across object data.
         """
         DCEP = DenseCorrespondenceEvaluationPlotter
 
@@ -2999,18 +3012,18 @@ class DenseCorrespondenceEvaluationPlotter(object):
             fig, ax = plt.subplots(N, figsize=(10,N*5))
         else:
             [fig, ax] = previous_fig_axes
-        
-        
+
+
         # pixel match error
         plot = DCEP.make_across_object_best_match_plot(ax, df, label=label)
         ax.legend()
-       
+
         if save:
             fig_file = os.path.join(output_dir, "across_objects.png")
             fig.savefig(fig_file)
-        
+
         return [fig, ax]
-        
+
 
 
 def run():

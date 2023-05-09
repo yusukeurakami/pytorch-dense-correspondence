@@ -56,6 +56,8 @@ class DenseCorrespondenceTraining(object):
         self._dcn = None
         self._optimizer = None
 
+        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
     def setup(self):
         """
         Initializes the object
@@ -89,7 +91,7 @@ class DenseCorrespondenceTraining(object):
         if self._dataset is None:
             self._dataset = SpartanDataset.make_default_10_scenes_drill()
 
-        
+
         self._dataset.load_all_pose_data()
         self._dataset.set_parameters_from_training_config(self._config)
 
@@ -101,7 +103,7 @@ class DenseCorrespondenceTraining(object):
             if self._dataset_test is None:
                 self._dataset_test = SpartanDataset(mode="test", config=self._dataset.config)
 
-            
+
             self._dataset_test.load_all_pose_data()
             self._dataset_test.set_parameters_from_training_config(self._config)
 
@@ -154,7 +156,7 @@ class DenseCorrespondenceTraining(object):
         d['train'] = dict()
         d['test'] = dict()
 
-        for key, val in d.iteritems():
+        for key, val in d.items():
             for field in logging_dict[key].keys():
                 vec = logging_dict[key][field]
 
@@ -196,14 +198,14 @@ class DenseCorrespondenceTraining(object):
             model_param_file = prefix + ".pth"
             optim_param_file = prefix + ".pth.opt"
 
-        print "model_param_file", model_param_file
+        print("model_param_file", model_param_file)
         model_param_file = os.path.join(model_folder, model_param_file)
         optim_param_file = os.path.join(model_folder, optim_param_file)
 
 
         self._dcn = self.build_network()
         self._dcn.load_state_dict(torch.load(model_param_file))
-        self._dcn.cuda()
+        self._dcn.to(self.device)
         self._dcn.train()
 
         self._optimizer = self._construct_optimizer(self._dcn.parameters())
@@ -242,6 +244,7 @@ class DenseCorrespondenceTraining(object):
         if not use_pretrained:
             # create new network and optimizer
             self._dcn = self.build_network()
+            self._dcn = self._dcn.to(self.device)
             self._optimizer = self._construct_optimizer(self._dcn.parameters())
         else:
             logging.info("using pretrained model")
@@ -252,7 +255,7 @@ class DenseCorrespondenceTraining(object):
 
         # make sure network is using cuda and is in train mode
         dcn = self._dcn
-        dcn.cuda()
+        dcn.to(self.device)
         dcn.train()
 
         optimizer = self._optimizer
@@ -271,7 +274,7 @@ class DenseCorrespondenceTraining(object):
         # logging
         self._logging_dict = dict()
         self._logging_dict['train'] = {"iteration": [], "loss": [], "match_loss": [],
-                                           "masked_non_match_loss": [], 
+                                           "masked_non_match_loss": [],
                                            "background_non_match_loss": [],
                                            "blind_non_match_loss": [],
                                            "learning_rate": [],
@@ -302,25 +305,30 @@ class DenseCorrespondenceTraining(object):
                 metadata = data
 
                 if (match_type == -1).all():
-                    print "\n empty data, continuing \n"
+                    print("\n empty data, continuing \n")
+                    continue
+                if (matches_a.squeeze(0).size()[0] == 0):
+                    print("\n no matching, continuing \n")
                     continue
 
 
                 data_type = metadata["type"][0]
-                
-                img_a = Variable(img_a.cuda(), requires_grad=False)
-                img_b = Variable(img_b.cuda(), requires_grad=False)
 
-                matches_a = Variable(matches_a.cuda().squeeze(0), requires_grad=False)
-                matches_b = Variable(matches_b.cuda().squeeze(0), requires_grad=False)
-                masked_non_matches_a = Variable(masked_non_matches_a.cuda().squeeze(0), requires_grad=False)
-                masked_non_matches_b = Variable(masked_non_matches_b.cuda().squeeze(0), requires_grad=False)
 
-                background_non_matches_a = Variable(background_non_matches_a.cuda().squeeze(0), requires_grad=False)
-                background_non_matches_b = Variable(background_non_matches_b.cuda().squeeze(0), requires_grad=False)
+                img_a = img_a.to(self.device)
+                img_b = img_b.to(self.device)
 
-                blind_non_matches_a = Variable(blind_non_matches_a.cuda().squeeze(0), requires_grad=False)
-                blind_non_matches_b = Variable(blind_non_matches_b.cuda().squeeze(0), requires_grad=False)
+                matches_a = matches_a.squeeze(0).to(self.device)
+                matches_b = matches_b.squeeze(0).to(self.device)
+
+                masked_non_matches_a = masked_non_matches_a.squeeze(0).to(self.device)
+                masked_non_matches_b = masked_non_matches_b.squeeze(0).to(self.device)
+
+                background_non_matches_a = background_non_matches_a.squeeze(0).to(self.device)
+                background_non_matches_b = background_non_matches_b.squeeze(0).to(self.device)
+
+                blind_non_matches_a = blind_non_matches_a.squeeze(0).to(self.device)
+                blind_non_matches_b = blind_non_matches_b.squeeze(0).to(self.device)
 
                 optimizer.zero_grad()
                 self.adjust_learning_rate(optimizer, loss_current_iteration)
@@ -340,7 +348,7 @@ class DenseCorrespondenceTraining(object):
                                                                                 masked_non_matches_a, masked_non_matches_b,
                                                                                 background_non_matches_a, background_non_matches_b,
                                                                                 blind_non_matches_a, blind_non_matches_b)
-                
+
 
                 loss.backward()
                 optimizer.step()
@@ -400,7 +408,7 @@ class DenseCorrespondenceTraining(object):
 
                     elif data_type == SpartanDatasetDataType.MULTI_OBJECT:
                         self._tensorboard_logger.log_value("train loss MULTI_OBJECT", loss.item(), loss_current_iteration)
-                    
+
                     elif data_type == SpartanDatasetDataType.SYNTHETIC_MULTI_OBJECT:
                         self._tensorboard_logger.log_value("train loss SYNTHETIC_MULTI_OBJECT", loss.item(), loss_current_iteration)
                     else:
@@ -473,7 +481,7 @@ class DenseCorrespondenceTraining(object):
 
         self._logging_dir = os.path.join(utils.convert_data_relative_path_to_absolute_path(self._config['training']['logging_dir']), dir_name)
 
-        print "logging_dir:", self._logging_dir
+        print("logging_dir:", self._logging_dir)
 
         if os.path.isdir(self._logging_dir):
             shutil.rmtree(self._logging_dir)
