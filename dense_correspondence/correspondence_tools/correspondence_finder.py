@@ -471,6 +471,7 @@ def batch_find_pixel_correspondences(img_a_depth, img_a_pose, img_b_depth, img_b
 
         # Option A: This next line samples from img mask
         uv_a_vec = random_sample_from_masked_image_torch(img_a_mask, num_samples=num_attempts)
+
         if uv_a_vec[0] is None:
             return (None, None)
 
@@ -481,8 +482,8 @@ def batch_find_pixel_correspondences(img_a_depth, img_a_pose, img_b_depth, img_b
         # uv_a_vec = (nonzero[:,1], nonzero[:,0])
 
         # Always use this line
-        uv_a_vec_flattened = uv_a_vec[1]*image_width+uv_a_vec[0]
-        uv_a_vec_flattened = uv_a_vec_flattened.type(dtype_long)
+        uv_a_vec_flattened = uv_a_vec[1].type(dtype_long)*image_width+uv_a_vec[0]
+        #uv_a_vec_flattened = uv_a_vec_flattened.type(dtype_long)
 
     if K is None:
         K = get_default_K_matrix()
@@ -494,11 +495,15 @@ def batch_find_pixel_correspondences(img_a_depth, img_a_pose, img_b_depth, img_b
     img_a_depth_torch = torch.from_numpy(np.array(img_a_depth)).type(dtype_float)
     img_a_depth_torch = torch.squeeze(img_a_depth_torch, 0)
     img_a_depth_torch = img_a_depth_torch.view(-1,1)
+    # print("unique depth value in entire image_a pixels: ", torch.unique(img_a_depth_torch))
 
     # select only the point within the index range
     uv_a_vec_flattened = torch.index_select(uv_a_vec_flattened,0,(uv_a_vec_flattened<img_a_depth_torch.size()[0]).nonzero()[:, 0])
+
+    # TODO: output of this has to be the depth in the masked area but the output is the depth value of the
     depth_vec = torch.index_select(img_a_depth_torch, 0, uv_a_vec_flattened)*1.0/DEPTH_IM_SCALE
     depth_vec = depth_vec.squeeze(1)
+    # print("unique depth value in masked area in image_a: ", torch.unique(depth_vec))
 
     # Prune based on
     # Case 1: depth is zero (for this data, this means no-return)
@@ -593,7 +598,7 @@ def batch_find_pixel_correspondences(img_a_depth, img_a_pose, img_b_depth, img_b
     uv_b_vec_flattened = (v2_vec.type(dtype_long)*image_width+u2_vec.type(dtype_long))  # simply round to int -- good enough
                                                                        # occlusion check for smooth surfaces
 
-    depth2_vec = torch.index_select(img_b_depth_torch, 0, uv_b_vec_flattened)*1.0/1000
+    depth2_vec = torch.index_select(img_b_depth_torch, 0, uv_b_vec_flattened)*1.0/DEPTH_IM_SCALE
     depth2_vec = depth2_vec.squeeze(1)
 
     # occlusion margin, in meters
@@ -614,6 +619,7 @@ def batch_find_pixel_correspondences(img_a_depth, img_a_pose, img_b_depth, img_b
     v2_vec = torch.index_select(v2_vec, 0, non_occluded_indices)
     u_a_pruned = torch.index_select(u_a_pruned, 0, non_occluded_indices) # also prune from first list
     v_a_pruned = torch.index_select(v_a_pruned, 0, non_occluded_indices) # also prune from first list
+    # print("matching points after oclusion pruning: ", u_a_pruned.size())
 
     uv_b_vec = (u2_vec, v2_vec)
     uv_a_vec = (u_a_pruned, v_a_pruned)
