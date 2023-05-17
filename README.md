@@ -1,11 +1,7 @@
-### Updates 
-
-- September 4, 2018: Tutorial and data now available!  [We have a tutorial now available here](./doc/tutorial_getting_started.md), which walks through step-by-step of getting this repo running.
-- June 26, 2019: We have updated the repo to pytorch 1.1 and CUDA 10. For code used for the experiments in the paper see [here](https://github.com/RobotLocomotion/pytorch-dense-correspondence/releases/tag/pytorch-0.3).
-
+# Python3 version of Dense Object correspondence
+- 2023/5/15 Tested on Python 3.8.10 + pytorch 1.13.0+cu117
 
 ## Dense Correspondence Learning in PyTorch
-
 In this project we learn Dense Object Nets, i.e. dense descriptor networks for previously unseen, potentially deformable objects, and potentially classes of objects:
 
 ![](./doc/caterpillar_trim.gif)  |  ![](./doc/shoes_trim.gif) | ![](./doc/hats_trim.gif)
